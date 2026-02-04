@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>MC解密</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    </head>
+    <body>
+        <h1>MC解密</h1>
+        <label>选择存档(.zip)</label>
+        <input type="file" id="f" accept=".zip">
+        <button onclick="d()">解密</button>
+        <div id="p"></div>
+        <div id="r"></div>
+        <script>
+            const K=[56,56,51,50,57,56,53,49],M=[128,29,48,1],A=[144,29,48,1];
+            function E(b){
+                return b.length>=4&&((b[0]==M[0]&&b[1]==M[1]&&b[2]==M[2]&&b[3]==M[3])||(b[0]==A[0]&&b[1]==A[1]&&b[2]==A[2]&&b[3]==A[3]))
+            }
+            function D(b,k){
+                if(!E(b))throw'未加密';
+                const c=k||K,x=b.slice(4),n=new Uint8Array(x.length);
+                for(let i=0;i<x.length;i++)n[i]=x[i]^c[i%c.length];
+                return n
+            }
+            function R(m,c){
+                const x=c.slice(4,20),h=[];
+                for(let i=0;i<m.length;i++)h.push(m.charCodeAt(i));
+                h.push(10);
+                if(x.length!=h.length)return null;
+                const y=[];
+                for(let i=0;i<x.length;i++)y[i]=x[i]^h[i];
+                const f=y.slice(0,8),l=y.slice(8);
+                for(let i=0;i<8;i++)if(f[i]!=l[i])return null;
+                return f
+            }
+            let B=null;
+            async function d(){
+                const i=document.getElementById('f').files[0];
+                if(!i){S('e','请选文件');return}
+                const p=document.getElementById('p'),r=document.getElementById('r');
+                p.style.display='block';
+                p.textContent='读取中...';
+                r.style.display='none';
+                try{
+                    const a=await i.arrayBuffer();
+                    p.textContent='解压中...';
+                    const z=await JSZip.loadAsync(a),F={};
+                    for(const x in z.files)if(!z.files[x].dir)F[x]=await z.files[x].async('uint8array');
+                    const O=Object.keys(F).filter(x=>x.startsWith('db/'));
+                    if(!O.length)throw'无db文件夹';
+                    p.textContent=`找到${O.length}个文件，推导密钥...`;
+                    const n=O.find(f=>/MANIFEST-\d+/.test(f)),u=O.find(f=>f.endsWith('CURRENT'));
+                    if(!n||!u)throw'无法推导密钥';
+                    const k=R(n.split('/').pop(),F[u]);
+                    if(!k)throw'推导失败';
+                    p.textContent='解密中...';
+                    const N=new JSZip();
+                    let C=0;
+                    for(const x in F){
+                        const w=F[x];
+                        if(x.startsWith('db/')){
+                            if(E(w)){N.file(x,D(w,k));C++}else N.file(x,w)
+                        }else N.file(x,w)
+                    }
+                    p.textContent='打包中...';
+                    const g=await N.generateAsync({type:'blob',compression:'STORE'});
+                    B=g;
+                    p.textContent='完成';
+                    S('s',`<p><strong>解密成功！</strong></p><p>已解密${C}个文件</p><p>大小:${(g.size/1024/1024).toFixed(2)}MB</p><button onclick="w('${i.name.replace('.zip','')}')">下载</button>`)
+                }catch(e){
+                    p.textContent='失败';
+                    S('e',`错误:${e.message}`)
+                }
+            }
+            function S(t,m){
+                const r=document.getElementById('r');
+                r.innerHTML=m;
+                r.style.display='block'
+            }
+            function w(n){
+                if(!B){alert('无可下载文件');return}
+                const u=URL.createObjectURL(B),a=document.createElement('a');
+                a.href=u;
+                a.download=n+'_Decrypted.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(u)
+            }
+        </script>
+        <div><a href="https://github.com/Stuk/jszip" target="_blank">JSZip</a> | <a href="https://github.com/HTMonkeyG/XOR-MC-Archive-Decrypt" target="_blank">XOR-MC-Archive-Decrypt(灵感来源)</a></div>
+        
+        <hr>
+        
+        <p style="font-size: 0.75rem; color: #666; line-height: 1.6; white-space: pre-wrap;">The MIT License
+
+Copyright © 2026 UeCook
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+        
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 16px 0;">
+        
+        <p style="font-size: 0.75rem; color: #666; line-height: 1.6; white-space: pre-wrap;">The MIT License（JSZip）
+
+Copyright ©2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+        
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 16px 0;">
+        
+        <p style="font-size: 0.75rem; color: #666; line-height: 1.6; white-space: pre-wrap;">The MIT License（XOR-MC-Archive-Decrypt）
+
+Copyright ©2023 HTMonkeyG
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</p>
+    </body>
+</html>
