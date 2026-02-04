@@ -66,7 +66,7 @@
 ```
 The MIT License
 
-Copyright ©2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
+Copyright (c)2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -92,7 +92,7 @@ THE SOFTWARE.
 ```
 The MIT License
 
-Copyright ©2023 HTMonkeyG
+Copyright (c)2023 HTMonkeyG
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
