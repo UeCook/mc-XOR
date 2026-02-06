@@ -42,7 +42,7 @@
 
 ### 在线使用
 
-1. 访问工具网页[mc.uecook.top](https://mc.uecook.top)
+1. 访问工具网页：[mc.uecook.top](https://mc.uecook.top)
 2. 点击上传区域或拖拽加密的存档文件（.zip格式）
 3. 点击"解密"按钮
 4. 等待处理完成
